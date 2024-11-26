@@ -1,49 +1,55 @@
-<%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.ArrayList" %>
-<%@ page import="javax.servlet.http.HttpSession" %>
-
+<%@ page import="java.sql.*" %>
 <%
-// 获取当前会话
-HttpSession httpSession = request.getSession(false);
-if (httpSession == null || httpSession.getAttribute("authenticatedUser") == null) {
-    response.sendRedirect("login.jsp"); // 如果用户未登录，则重定向到登录页面
+HttpSession session = request.getSession(false);
+if (session == null || session.getAttribute("authenticatedUser") == null) {
+    response.sendRedirect("login.jsp");
     return;
 }
 
-// 获取当前用户的购物车
-@SuppressWarnings({"unchecked"})
-HashMap<String, ArrayList<Object>> productList = (HashMap<String, ArrayList<Object>>) httpSession.getAttribute("productList");
+String userId = session.getAttribute("authenticatedUser").toString();
+String productId = request.getParameter("id");
+String quantityStr = request.getParameter("quantity");
+int quantity = (quantityStr == null) ? 1 : Integer.parseInt(quantityStr);
 
-if (productList == null) {
-    // 如果当前没有购物车，创建一个新的
-    productList = new HashMap<String, ArrayList<Object>>();
+// 数据库连接
+Connection conn = null;
+PreparedStatement ps = null;
+try {
+    Class.forName("com.mysql.jdbc.Driver");
+    conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/yourdatabase", "username", "password");
+
+    // 检查是否已有该产品的购物车记录
+    String sqlCheck = "SELECT Quantity FROM Cart WHERE UserID = ? AND ProductID = ?";
+    ps = conn.prepareStatement(sqlCheck);
+    ps.setString(1, userId);
+    ps.setString(2, productId);
+    ResultSet rs = ps.executeQuery();
+
+    if (rs.next()) {
+        // 更新数量
+        int existingQuantity = rs.getInt("Quantity");
+        String sqlUpdate = "UPDATE Cart SET Quantity = ? WHERE UserID = ? AND ProductID = ?";
+        ps = conn.prepareStatement(sqlUpdate);
+        ps.setInt(1, existingQuantity + quantity);
+        ps.setString(2, userId);
+        ps.setString(3, productId);
+        ps.executeUpdate();
+    } else {
+        // 新增记录
+        String sqlInsert = "INSERT INTO Cart (UserID, ProductID, Quantity) VALUES (?, ?, ?)";
+        ps = conn.prepareStatement(sqlInsert);
+        ps.setString(1, userId);
+        ps.setString(2, productId);
+        ps.setInt(3, quantity);
+        ps.executeUpdate();
+    }
+
+} catch (Exception e) {
+    out.println("Error: " + e.getMessage());
+} finally {
+    if (ps != null) ps.close();
+    if (conn != null) conn.close();
 }
 
-// 获取产品信息
-String id = request.getParameter("id");
-String name = request.getParameter("name");
-String price = request.getParameter("price");
-Integer quantity = 1; // 默认数量为 1
-
-// 创建产品信息的 ArrayList
-ArrayList<Object> product = new ArrayList<Object>();
-product.add(id);
-product.add(name);
-product.add(price);
-product.add(quantity);
-
-// 如果购物车中已经有相同的产品，更新数量
-if (productList.containsKey(id)) {
-    product = productList.get(id);
-    int curAmount = ((Integer) product.get(3)).intValue();
-    product.set(3, curAmount + 1);
-} else {
-    productList.put(id, product);
-}
-
-// 更新会话中的购物车
-httpSession.setAttribute("productList", productList);
-
-// 跳转到显示购物车的页面
+response.sendRedirect("showcart.jsp");
 %>
-<jsp:forward page="showcart.jsp" />

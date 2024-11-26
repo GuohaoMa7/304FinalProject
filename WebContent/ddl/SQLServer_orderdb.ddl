@@ -143,6 +143,29 @@ CREATE TABLE review (
         ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+CREATE TABLE Cart (
+    CartID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID INT NOT NULL, -- 用户ID
+    ProductID INT NOT NULL, -- 产品ID
+    Quantity INT NOT NULL, -- 产品数量
+    FOREIGN KEY (UserID) REFERENCES Users(UserID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+CREATE TABLE OrderShipment (
+    orderId INT,
+    shipmentId INT IDENTITY,
+    shipmentDate DATETIME,
+    shipmentDesc VARCHAR(100),
+    warehouseId INT,
+    PRIMARY KEY (orderId, shipmentId),
+    FOREIGN KEY (orderId) REFERENCES ordersummary(orderId)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (warehouseId) REFERENCES warehouse(warehouseId)
+        ON UPDATE CASCADE ON DELETE NO ACTION
+);
+
+
 INSERT INTO category(categoryName) VALUES ('Beverages');
 INSERT INTO category(categoryName) VALUES ('Condiments');
 INSERT INTO category(categoryName) VALUES ('Dairy Products');

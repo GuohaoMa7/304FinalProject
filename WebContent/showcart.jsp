@@ -1,9 +1,11 @@
-<%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.Iterator" %>
-<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.*" %>
 <%@ page import="java.text.NumberFormat" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="javax.servlet.http.HttpSession" %>
+<%@ page import="java.sql.Connection" %>
+<%@ page import="java.sql.DriverManager" %>
+<%@ page import="java.sql.PreparedStatement" %>
+<%@ page import="java.sql.ResultSet" %>
+<%@ page import="java.sql.SQLException" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF8"%>
 <!DOCTYPE html>
 <html>
@@ -58,7 +60,7 @@
             text-decoration: underline;
         }
         .error-message {
-            color: #008080;
+            color: #ff0000;
             text-align: left;
         }
     </style>
@@ -66,62 +68,67 @@
 <body>
 
 <%
-    // 获取当前会话
-    HttpSession httpSession = request.getSession(false);
-    if (httpSession == null || httpSession.getAttribute("authenticatedUser") == null) {
-        response.sendRedirect("login.jsp"); // 如果用户未登录，则重定向到登录页面
+    // Remove duplicate variable declaration of session, just use the one available in JSP
+    if (session == null || session.getAttribute("authenticatedUser") == null) {
+        response.sendRedirect("login.jsp");
         return;
     }
 
-    // 获取当前用户的购物车
-    @SuppressWarnings({"unchecked"})
-    HashMap<String, ArrayList<Object>> productList = (HashMap<String, ArrayList<Object>>) httpSession.getAttribute("productList");
+    String userId = session.getAttribute("authenticatedUser").toString();
+    Connection conn = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
 
-    if (productList == null || productList.isEmpty()) { 
-        out.println("<h1 class='error-message'>Your shopping cart is empty!</h1>");
-    } else {
-        NumberFormat currFormat = NumberFormat.getCurrencyInstance();
-        double total = 0;
+    try {
+        // Load the SQL Server JDBC driver
+        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 
+        // Establish a connection to the SQL Server database
+        conn = DriverManager.getConnection("jdbc:sqlserver://cosc304_sqlserver:1433;databaseName=testuser", "sa", "304#sa#pw");
+
+        // Prepare and execute the SQL query to fetch cart items
+        String sql = "SELECT p.ProductID, p.Name, p.Price, c.Quantity FROM Cart c JOIN Products p ON c.ProductID = p.ProductID WHERE c.UserID = ?";
+        ps = conn.prepareStatement(sql);
+        ps.setString(1, userId);
+        rs = ps.executeQuery();
+
+        // Display the cart details
         out.println("<h1>Your Shopping Cart</h1>");
-        out.println("<form action='updatecart.jsp' method='post'>");
-        out.print("<table><tr><th>Product Id</th><th>Product Name</th><th>Quantity</th>");
-        out.println("<th>Price</th><th>Subtotal</th><th>Actions</th></tr>");
+        out.println("<table><tr><th>Product Name</th><th>Quantity</th><th>Price</th><th>Subtotal</th></tr>");
 
-        for (Map.Entry<String, ArrayList<Object>> entry : productList.entrySet()) {
-            ArrayList<Object> product = entry.getValue();
-            String productId = entry.getKey();
-            String productName = (String) product.get(1);
-            double price = Double.parseDouble(product.get(2).toString());
-            int quantity = Integer.parseInt(product.get(3).toString());
-
+        double total = 0;
+        while (rs.next()) {
+            String productName = rs.getString("Name");
+            double price = rs.getDouble("Price");
+            int quantity = rs.getInt("Quantity");
             double subtotal = price * quantity;
+
+            out.println("<tr>");
+            out.println("<td>" + productName + "</td>");
+            out.println("<td>" + quantity + "</td>");
+            out.println("<td>" + price + "</td>");
+            out.println("<td>" + subtotal + "</td>");
+            out.println("</tr>");
+
             total += subtotal;
-
-            out.print("<tr>");
-            out.print("<td>" + productId + "</td>");
-            out.print("<td>" + productName + "</td>");
-            out.print("<td><input type='number' name='quantity_" + productId + "' value='" + quantity + "' min='1'></td>");
-            out.print("<td align='right'>" + currFormat.format(price) + "</td>");
-            out.print("<td align='right'>" + currFormat.format(subtotal) + "</td>");
-            out.print("<td><button type='submit' name='remove' value='" + productId + "'>Remove</button></td>");
-            out.print("</tr>");
         }
-
-        out.println("<tr class='total-row'><td colspan='4' align='right'><b>Order Total</b></td>"
-                + "<td align='right'>" + currFormat.format(total) + "</td></tr>");
+        out.println("<tr class='total-row'><td colspan='3'>Total</td><td>" + total + "</td></tr>");
         out.println("</table>");
 
-        out.println("<div style='text-align:center;'><input type='submit' name='update' value='Update Cart'></div>");
-        out.println("</form>");
-
-        out.println("<div class='footer-links'><h2><a href='checkout.jsp'>Check Out</a></h2></div>");
+    } catch (ClassNotFoundException e) {
+        out.println("<p class='error-message'>Error: JDBC Driver not found - " + e.getMessage() + "</p>");
+    } catch (SQLException e) {
+        out.println("<p class='error-message'>Error: Database connection issue - " + e.getMessage() + "</p>");
+    } finally {
+        try {
+            if (rs != null) rs.close();
+            if (ps != null) ps.close();
+            if (conn != null) conn.close();
+        } catch (SQLException e) {
+            out.println("<p class='error-message'>Error closing resources: " + e.getMessage() + "</p>");
+        }
     }
 %>
-
-<div class="footer-links">
-    <h2><a href="listprod.jsp">Continue Shopping</a></h2>
-</div>
 
 </body>
 </html>
