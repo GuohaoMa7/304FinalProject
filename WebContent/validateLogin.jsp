@@ -1,63 +1,52 @@
-<%@ page language="java" import="java.io.*,java.sql.*"%>
+<%@ page language="java" import="java.io.*, java.sql.*, javax.servlet.http.*" %>
 <%@ include file="jdbc.jsp" %>
 <%
     String authenticatedUser = null;
 
     try {
-        // Use the session object directly as it is already available in JSP.
-        out.println("Starting login validation...<br/>");
         authenticatedUser = validateLogin(out, request);
     } catch (IOException e) {
         System.err.println(e);
+        out.println("<h4>Error during login validation: " + e.getMessage() + "</h4>");
     }
 
     if (authenticatedUser != null) {
-        out.println("Login successful, redirecting to home.jsp...<br/>");
-        response.sendRedirect("home.jsp"); // Successful login - redirect to home page
+        // 登录成功 - 重定向到主页
+        response.sendRedirect("index.jsp");
     } else {
-        out.println("Login failed, redirecting to login.jsp...<br/>");
-        response.sendRedirect("login.jsp"); // Failed login - redirect back to login page
+        // 登录失败 - 重定向回登录页
+        response.sendRedirect("login.jsp");
     }
 %>
 
 <%!
-    // Method to validate login credentials
+    // 用于验证登录凭证的方法
     String validateLogin(JspWriter out, HttpServletRequest request) throws IOException {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         String retStr = null;
 
-        // Validate the provided credentials
         if (username == null || password == null) {
-            out.println("Username or password is null.<br/>");
             return null;
         }
         if (username.length() == 0 || password.length() == 0) {
-            out.println("Username or password is empty.<br/>");
             return null;
         }
 
-        Connection con = null; // Declare connection here
+        Connection con = null;
 
         try {
-            out.println("Attempting to connect to the database...<br/>");
-            con = getConnection(); // Get the connection from jdbc.jsp
-            out.println("Database connection established.<br/>");
+            con = getConnection(); // 从 jdbc.jsp 获取数据库连接
+            con.setNetworkTimeout(null, 5000);
 
-            // SQL query to validate user credentials
             String SQL = "SELECT customerId FROM customer WHERE userid=? AND password=?";
             PreparedStatement pstmt = con.prepareStatement(SQL);
             pstmt.setString(1, username);
             pstmt.setString(2, password);
-            out.println("Executing SQL query...<br/>"); // Log output
             ResultSet rs = pstmt.executeQuery();
 
-            // Check if a matching user exists
             if (rs.next()) {
-                retStr = rs.getString("customerId"); // If user exists, set retStr to customerId
-                out.println("User found: " + retStr + "<br/>");
-            } else {
-                out.println("No matching user found.<br/>");
+                retStr = rs.getString("customerId"); // 找到用户
             }
             rs.close();
             pstmt.close();
@@ -65,16 +54,18 @@
             out.println("<h4>Error: " + ex.getMessage() + "</h4>");
         } finally {
             if (con != null) {
-                closeConnection(con); // Close the connection
-                out.println("Database connection closed.<br/>");
+                try {
+                    closeConnection(con);
+                } catch (Exception e) {
+                    out.println("<h4>Error closing connection: " + e.getMessage() + "</h4>");
+                }
             }
         }
 
-        // Update session with appropriate messages
-        HttpSession session = request.getSession(); // Get the session
+        HttpSession session = request.getSession(); // 获取会话
         if (retStr != null) {
             session.removeAttribute("loginMessage");
-            session.setAttribute("authenticatedUser", retStr); // Store customerId instead of username
+            session.setAttribute("authenticatedUser", retStr); // 存储 customerId
         } else {
             session.setAttribute("loginMessage", "Could not connect to the system using that username/password.");
         }
