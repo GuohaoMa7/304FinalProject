@@ -34,12 +34,12 @@
     }
 
     if (isValid) {
-        // 设置 session 属性以指示登录成功
-        session.setAttribute("authenticatedAdmin", adminUsername);
+        // 设置 session 属性以指示管理员登录成功
+        session.setAttribute("authenticatedAdmin", adminUsername); // 设置管理员会话属性
         response.sendRedirect("admin.jsp"); // 如果登录成功，重定向到 admin.jsp 页面
     } else {
-        // 如果登录失败，设置错误消息并重定向回登录页面
+        // 如果登录失败，设置错误消息并重定向回管理员登录页面
         session.setAttribute("loginError", "用户名或密码无效，请重试。");
-        response.sendRedirect("adminLogin.jsp"); // 如果登录失败，重定向回登录页面
+        response.sendRedirect("adminLogin.jsp"); // 如果登录失败，重定向回管理员登录页面
     }
 %>
