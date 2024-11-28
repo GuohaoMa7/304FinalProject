@@ -58,7 +58,7 @@
     <h1>Administrator Login</h1>
     <form method="post" action="adminLoginProcess.jsp">
         <label for="adminUsername">Username: </label>
-        <input type="text" id="adminUsername" name="adminUsername" placeholder="Admin Username" required><br>
+        <input type="text" id="adminUsername" name="adminUsername" placeholder="Admin Username" value="<%= request.getParameter("adminUsername") != null ? request.getParameter("adminUsername") : "" %>" required><br>
 
         <label for="adminPassword">Password: </label>
         <input type="password" id="adminPassword" name="adminPassword" placeholder="Admin Password" required><br>
@@ -67,7 +67,7 @@
     </form>
 
     <% 
-    // Display login error message if set in the session
+    // 显示登录错误消息（如果存在）
     String loginError = (String) session.getAttribute("loginError");
     if (loginError != null) {
         out.println("<p class='message'>" + loginError + "</p>");

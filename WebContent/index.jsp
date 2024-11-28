@@ -174,7 +174,7 @@
     <h2><a href="listprod.jsp" class="button-link">Begin Shopping</a></h2>
     <h2><a href="listorder.jsp" class="button-link">List All Orders</a></h2>
     <h2><a href="customer.jsp" class="button-link">Customer Info</a></h2>
-    <h2><a href="admin.jsp" class="button-link">Administrators</a></h2>
+    <h2><a href="adminLogin.jsp" class="button-link">Administrators</a></h2> <!-- 修改后的代码，直接链接到 adminLogin.jsp -->
     <h2><a href="logout.jsp" class="login-logout-button">Log out</a></h2>
 </div>
 
