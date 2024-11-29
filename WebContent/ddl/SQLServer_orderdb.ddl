@@ -246,6 +246,7 @@ UPDATE Product SET productImageURL = 'img/3.jpg' WHERE ProductId = 3;
 UPDATE Product SET productImageURL = 'img/4.jpg' WHERE ProductId = 4;
 UPDATE Product SET productImageURL = 'img/5.jpg' WHERE ProductId = 5;
 
+-- Admin Acc
 INSERT INTO admin (username, password) VALUES ('admin', 'admin123');
 
 

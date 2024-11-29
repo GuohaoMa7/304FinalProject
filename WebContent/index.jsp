@@ -5,16 +5,15 @@
 <head>
     <title>Ray's Grocery Main Page</title>
     <style>
-        
         body {
             background-color: #BFEFFF;
             font-family: Arial, sans-serif;
             color: #333;
             margin: 0;
             padding: 0;
+            overflow: hidden; /* 防止页面滚动 */
         }
 
-        
         h1 {
             color: #0077b3;
             text-align: center;
@@ -36,7 +35,6 @@
             color: #004d66;
         }
 
-        
         table {
             width: 80%;
             margin: 20px auto;
@@ -64,20 +62,17 @@
             background-color: #e6f7ff;
         }
 
-       
         .container {
             width: 90%;
             margin: 0 auto;
             text-align: center;
         }
 
-        
         .section-title {
             color: #004d66;
             margin-bottom: 15px;
         }
 
-        
         .button-link {
             background-color: #0077b3;
             color: white;
@@ -90,7 +85,6 @@
             background-color: #004d66;
         }
 
-        
         .login-logout-button {
             background-color: #ff6f61;  
             color: white;
@@ -104,18 +98,56 @@
             background-color: #e65c54; 
         }
 
-       
         .message {
             color: red;
             font-size: 1.1em;
         }
 
-        
         .bottom-image {
             width: 100%;
             margin-top: 20px;
         }
+
+        #floatingIcon {
+            width: 40px; /* 图标宽度 */
+            height: 50px; /* 图标高度 */
+            position: absolute;
+            top: 50px;
+            left: 50px;
+        }
     </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const icon = document.getElementById("floatingIcon");
+            let x = 50;
+            let y = 50;
+            let dx = 0.6;
+            let dy = 0.6;
+
+            function moveIcon() {
+                const width = window.innerWidth - icon.width;
+                const height = window.innerHeight - icon.height;
+
+                x += dx;
+                y += dy;
+
+                // 碰到边界时反弹
+                if (x <= 0 || x >= width) {
+                    dx = -dx;
+                }
+                if (y <= 0 || y >= height) {
+                    dy = -dy;
+                }
+
+                icon.style.left = x + 'px';
+                icon.style.top = y + 'px';
+
+                requestAnimationFrame(moveIcon);
+            }
+
+            moveIcon();
+        });
+    </script>
 </head>
 <body>
 
@@ -123,17 +155,34 @@
 
 <div class="container">
     <h2><a href="login.jsp" class="login-logout-button">Login</a></h2>
+
+    <% 
+        // 检查用户是否已登录
+        String userName = (String) session.getAttribute("authenticatedUser");
+
+        if (userName == null) {
+            // 用户未登录，显示“创建账户”按钮
+    %>
+            <h2><a href="createAcc.jsp" class="button-link">Create Account</a></h2>
+    <%
+        } else {
+            // 用户已登录，显示欢迎信息
+            out.println("<h3>Welcome, " + userName + "!</h3>");
+        }
+    %>
+
     <h2><a href="listprod.jsp" class="button-link">Begin Shopping</a></h2>
     <h2><a href="listorder.jsp" class="button-link">List All Orders</a></h2>
     <h2><a href="customer.jsp" class="button-link">Customer Info</a></h2>
-    <h2><a href="admin.jsp" class="button-link">Administrators</a></h2>
+    <h2><a href="adminLogin.jsp" class="button-link">Administrators</a></h2> <!-- 修改后的代码，直接链接到 adminLogin.jsp -->
     <h2><a href="logout.jsp" class="login-logout-button">Log out</a></h2>
 </div>
 
+<img id="floatingIcon" src="img/mixi.png" alt="Flying Icon">
+
 <%
     // Retrieve the logged-in user's name and customerId from the session
-    String userName = (String) session.getAttribute("authenticatedUser");
-    Integer customerId = (Integer) session.getAttribute("customerId");  // Changed to customerId for consistency
+    Integer customerId = (Integer) session.getAttribute("customerId");
 
     // Check if user is logged in
     if (userName != null) {
@@ -202,7 +251,7 @@
                 "ORDER BY COUNT(*) DESC";
             
             pstmt = con.prepareStatement(recommendationsQuery);
-            pstmt.setInt(1, customerId);  // Use customerId for recommendations
+            pstmt.setInt(1, customerId);
             rst = pstmt.executeQuery();
 
             if (rst.next()) {
@@ -242,10 +291,6 @@
         }
     }
 %>
-
-<h4 align="center"><a href="ship.jsp?orderId=1">Test Ship orderId=1</a></h4>
-<h4 align="center"><a href="ship.jsp?orderId=3">Test Ship orderId=3</a></h4>
-
 
 <img src="https://wx4.sinaimg.cn/orj480/007846BMgy1hucrdjtb16j30zk0k0wj3.jpg" alt="Grocery Image" class="bottom-image">
 
