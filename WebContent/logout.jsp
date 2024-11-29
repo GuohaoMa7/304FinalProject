@@ -3,4 +3,3 @@
 	session.setAttribute("authenticatedUser",null);
 	response.sendRedirect("index.jsp");		// Re-direct to main page
 %>
-
